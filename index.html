@@ -12,7 +12,6 @@
     --accent-dark:#b91c1c;
     --muted:#6b7280;
     --card:#ffffff;
-    --glass: rgba(255,255,255,0.8);
     --border:#e6e6e6;
     --shadow: 0 8px 32px rgba(0,0,0,0.06);
     --radius:14px;
@@ -66,6 +65,15 @@
   /* spinner */
   .spinner{width:18px;height:18px;border-radius:50%;border:3px solid rgba(255,255,255,0.3);border-top-color:#fff;animation:spin 1s linear infinite;display:inline-block;vertical-align:middle}
   @keyframes spin{to{transform:rotate(360deg)}}
+
+  /* Markdown rendering (simple) */
+  .md h1{font-size:20px;margin:6px 0}
+  .md h2{font-size:18px;margin:6px 0}
+  .md p{margin:6px 0}
+  .md ul{margin:6px 0 6px 18px}
+  .md ol{margin:6px 0 6px 18px}
+  .md pre{background:#0b1220;color:#e6eef8;padding:10px;border-radius:6px;overflow:auto}
+  .md code{background:#f3f4f6;padding:2px 4px;border-radius:4px}
 </style>
 </head>
 <body>
@@ -138,7 +146,7 @@
           <div id="dailyLoader" style="display:none"><span class="spinner"></span></div>
         </div>
 
-        <div id="dailyOutput" class="output" style="display:none;margin-top:12px"></div>
+        <div id="dailyOutputWrap" style="display:none;margin-top:12px"></div>
       </div>
 
       <!-- Planner -->
@@ -159,7 +167,7 @@
           <div id="plannerLoader" style="display:none"><span class="spinner"></span></div>
         </div>
 
-        <div id="plannerOutput" class="output" style="display:none;margin-top:12px"></div>
+        <div id="plannerOutputWrap" style="display:none;margin-top:12px"></div>
       </div>
 
       <!-- Reporting -->
@@ -180,7 +188,7 @@
           <div id="reportLoader" style="display:none"><span class="spinner"></span></div>
         </div>
 
-        <div id="reportOutput" class="output" style="display:none;margin-top:12px"></div>
+        <div id="reportOutputWrap" style="display:none;margin-top:12px"></div>
       </div>
 
       <!-- Smart Assign -->
@@ -206,7 +214,7 @@
           <div id="assignLoader" style="display:none"><span class="spinner"></span></div>
         </div>
 
-        <div id="assignOutput" class="output" style="display:none;margin-top:12px"></div>
+        <div id="assignOutputWrap" style="display:none;margin-top:12px"></div>
       </div>
 
       <!-- JSON Modifier -->
@@ -232,7 +240,7 @@
           <div id="jsonLoader" style="display:none"><span class="spinner"></span></div>
         </div>
 
-        <div id="jsonOutput" class="output" style="display:none;margin-top:12px"></div>
+        <div id="jsonOutputWrap" style="display:none;margin-top:12px"></div>
       </div>
 
       <!-- History -->
@@ -250,7 +258,6 @@
 
 <script>
 /* ----------------------------- CONFIG ----------------------------- */
-/* Gemini model and endpoint */
 const GEMINI_MODEL = "gemini-2.5-flash-preview-09-2025";
 const GEMINI_ENDPOINT = (apiKey) => `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${encodeURIComponent(apiKey)}`;
 
@@ -258,72 +265,130 @@ const GEMINI_ENDPOINT = (apiKey) => `https://generativelanguage.googleapis.com/v
 function $(sel){ return document.querySelector(sel) }
 function $all(sel){ return Array.from(document.querySelectorAll(sel)) }
 
-function nowShort(){
-  const d = new Date();
-  return d.toLocaleString();
-}
+function nowShort(){ return new Date().toLocaleString(); }
 
-/* localStorage history helpers */
-function loadHistory(){ try { return JSON.parse(localStorage.getItem("99gpt_history")||"[]") } catch(e) { return [] } }
+function loadHistory(){ try { return JSON.parse(localStorage.getItem("99gpt_history")||"[]") } catch(e){ return [] } }
 function saveHistory(arr){ try { localStorage.setItem("99gpt_history", JSON.stringify(arr)) } catch(e){} }
 function addHistory(tool, input, output){
-  const h = loadHistory();
-  h.push({ tool, input: input.slice(0,1000), output, timestamp: Date.now() });
-  saveHistory(h);
-  renderHistoryPreview();
+  const h = loadHistory(); h.push({ tool, input: input.slice(0,1000), output, timestamp: Date.now() }); saveHistory(h); renderHistoryPreview();
 }
 
-/* UI helpers */
-function setLoading(id, on){
-  const el = $(id);
-  if(!el) return;
-  el.style.display = on ? "inline-block" : "none";
-}
-function showOutput(elSelector, html){
-  const el = $(elSelector);
-  if(!el) return;
-  el.innerHTML = html;
-  el.style.display = "block";
-}
-function hideOutput(elSelector){
-  const el = $(elSelector); if(!el) return; el.style.display = "none";
-}
-function showError(elSelector, text){
-  showOutput(elSelector, `<div class="error">${escapeHtml(text)}</div>`);
-}
-function escapeHtml(s){ return (s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;") }
-
-/* safe copy (clipboard) */
+/* safe copy */
 async function safeCopy(text){
   if(!text) return false;
-  try{
-    if(navigator.clipboard && navigator.clipboard.writeText) { await navigator.clipboard.writeText(text); return true; }
-  }catch(e){}
-  try{
-    const ta = document.createElement("textarea");
-    ta.value = text; ta.setAttribute("readonly",""); ta.style.position="absolute"; ta.style.left="-9999px";
-    document.body.appendChild(ta); ta.select(); document.execCommand("copy"); document.body.removeChild(ta); return true;
-  }catch(e){}
-  alert("Copy blocked — use Download.");
+  try{ if(navigator.clipboard && navigator.clipboard.writeText) { await navigator.clipboard.writeText(text); return true; } }catch(e){}
+  try{ const ta=document.createElement('textarea'); ta.value=text; ta.readOnly=true; ta.style.position='absolute'; ta.style.left='-9999px'; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta); return true; }catch(e){}
+  alert('Copy blocked — use Download');
   return false;
 }
 
-/* render history preview */
-function renderHistoryPreview(){
-  const preview = $("#historyPreview");
-  if(!preview) return;
-  const list = loadHistory().slice().reverse().slice(0,6);
-  preview.innerHTML = list.length ? list.map(item => `<div style="padding:8px;border-radius:8px;border:1px solid var(--border);background:#fff"><div style="font-weight:700">${escapeHtml(item.tool)}</div><div style="font-size:12px;color:${'#6b7280'}">${new Date(item.timestamp).toLocaleString()}</div></div>`).join("") : '<div class="muted">No recent items</div>';
-  // also update last saved in sidebar if exists
-  try { const h = loadHistory(); $("#lastSaved") && ($("#lastSaved").textContent = h.length ? new Date(h[h.length-1].timestamp).toLocaleString() : "—"); } catch(e){}
+/* sanitize basic & allow <b> tags */
+function escapeHtml(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') }
+function allowBoldAndUnescape(s){
+  // input may already contain <b> tags from model; keep them
+  return escapeHtml(s).replace(/&lt;b&gt;/g,'<b>').replace(/&lt;\/b&gt;/g,'</b>');
 }
-function renderHistoryList(){
-  const container = $("#historyList");
-  const items = loadHistory().slice().reverse();
-  if(!container) return;
-  if(!items.length){ container.innerHTML = '<div class="muted">No history yet.</div>'; return; }
-  container.innerHTML = items.map(it => `<div class="history-item"><div style="display:flex;justify-content:space-between"><strong>${escapeHtml(it.tool)}</strong><span class="muted">${new Date(it.timestamp).toLocaleString()}</span></div><pre style="white-space:pre-wrap;margin-top:8px;background:#fff;padding:8px;border-radius:6px;border:1px solid var(--border)">${escapeHtml(it.output)}</pre></div>`).join("");
+
+/* Simple Markdown -> HTML converter (conservative, secure-ish)
+   Supports:
+   - fenced code blocks with ```
+   - headings #/## (h1/h2)
+   - unordered lists (- or *)
+   - ordered lists (1., 2.)
+   - paragraphs
+*/
+function markdownToHtml(mdRaw){
+  if (mdRaw === null || mdRaw === undefined) return '';
+  // Keep <b> if present by restoring after escaping
+  let text = mdRaw;
+  // split code fence segments
+  const parts = text.split(/```/);
+  let html = '';
+  for (let i = 0; i < parts.length; i++) {
+    const part = parts[i];
+    if (i % 2 === 1) {
+      // code block - render inside <pre><code>
+      html += '<pre><code>' + escapeHtml(part) + '</code></pre>';
+    } else {
+      // normal text - process line by line
+      const lines = part.split(/\r?\n/);
+      let inUl = false, inOl = false;
+      for (let ln of lines) {
+        if (ln.trim() === '') {
+          if (inUl) { html += '</ul>'; inUl = false; }
+          if (inOl) { html += '</ol>'; inOl = false; }
+          continue;
+        }
+        // headings
+        if (/^#{1}\s+/.test(ln)) {
+          if (inUl) { html += '</ul>'; inUl = false; }
+          if (inOl) { html += '</ol>'; inOl = false; }
+          html += '<h1>' + allowBoldAndUnescape(ln.replace(/^#\s+/, '')) + '</h1>';
+          continue;
+        }
+        if (/^#{2}\s+/.test(ln)) {
+          if (inUl) { html += '</ul>'; inUl = false; }
+          if (inOl) { html += '</ol>'; inOl = false; }
+          html += '<h2>' + allowBoldAndUnescape(ln.replace(/^##\s+/, '')) + '</h2>';
+          continue;
+        }
+        // unordered list
+        if (/^(\-|\*)\s+/.test(ln)) {
+          if (inOl) { html += '</ol>'; inOl = false; }
+          if (!inUl) { inUl = true; html += '<ul>'; }
+          html += '<li>' + allowBoldAndUnescape(ln.replace(/^(\-|\*)\s+/, '')) + '</li>';
+          continue;
+        }
+        // ordered list
+        if (/^\d+\.\s+/.test(ln)) {
+          if (inUl) { html += '</ul>'; inUl = false; }
+          if (!inOl) { inOl = true; html += '<ol>'; }
+          html += '<li>' + allowBoldAndUnescape(ln.replace(/^\d+\.\s+/, '')) + '</li>';
+          continue;
+        }
+        // normal paragraph
+        html += '<p>' + allowBoldAndUnescape(ln) + '</p>';
+      }
+      if (inUl) { html += '</ul>'; inUl = false; }
+      if (inOl) { html += '</ol>'; inOl = false; }
+    }
+  }
+  return '<div class="md">' + html + '</div>';
 }
+
+/* show output wrapper with copy/download */
+function showOutputWithTools(wrapperSelector, rawText) {
+  const wrapper = $(wrapperSelector);
+  if(!wrapper) return;
+  // render markdown -> html
+  const rendered = markdownToHtml(rawText);
+  wrapper.innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+      <div style="font-weight:700">Generated Output</div>
+      <div style="display:flex;gap:8px">
+        <button class="btn secondary" data-copy>Copy</button>
+        <button class="btn secondary" data-download>Download</button>
+      </div>
+    </div>
+    <div style="margin-top:8px" class="card">${rendered}</div>
+  `;
+  wrapper.style.display = 'block';
+  // attach copy/download listeners
+  wrapper.querySelector('[data-copy]').addEventListener('click', ()=> safeCopy(rawText));
+  wrapper.querySelector('[data-download]').addEventListener('click', ()=>{
+    const blob = new Blob([rawText], {type:'text/plain'});
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `99GPT_output_${Date.now()}.txt`; a.click(); URL.revokeObjectURL(a.href);
+  });
+}
+
+/* show error */
+function showError(wrapperSelector, msg){
+  const wrapper = $(wrapperSelector); if(!wrapper) return;
+  wrapper.innerHTML = `<div class="error">${escapeHtml(msg)}</div>`; wrapper.style.display='block';
+}
+
+/* hide wrapper */
+function hideWrapper(selector){ const w = $(selector); if(w) w.style.display='none' }
 
 /* ----------------------------- TABS ----------------------------- */
 $all("#tabs button").forEach(btn=>{
@@ -339,7 +404,6 @@ $all("#tabs button").forEach(btn=>{
 });
 
 /* ----------------------------- Gemini API Call ----------------------------- */
-/* Simple callGemini with timeout and basic retry. WARNING: sending key from client is insecure. */
 async function callGemini(apiKey, userQuery, systemPrompt, generationConfig = {}, timeoutMs = 20000, maxAttempts = 3) {
   if(!apiKey) throw new Error("Missing API key");
   const url = GEMINI_ENDPOINT(apiKey);
@@ -372,14 +436,12 @@ async function callGemini(apiKey, userQuery, systemPrompt, generationConfig = {}
     }catch(err){
       clearTimeout(timer);
       if(attempt >= maxAttempts) throw err;
-      // small backoff
       await new Promise(r => setTimeout(r, 500 * Math.pow(2, attempt)));
     }
   }
 }
 
 /* ----------------------------- TOOL: Daily Update ----------------------------- */
-
 $("#dailyDate").value = (new Date()).toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: '2-digit' });
 
 $("#dailySend").addEventListener("click", async ()=>{
@@ -389,7 +451,7 @@ $("#dailySend").addEventListener("click", async ()=>{
   const date = $("#dailyDate").value.trim() || (new Date()).toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: '2-digit' });
 
   if(!apiKey){ alert("Paste your Gemini API key in the sidebar first."); return; }
-  if(!notes || !build){ showError("#dailyOutput","Please enter Build Number and Test Notes."); return; }
+  if(!notes || !build){ showError("#dailyOutputWrap","Please enter Build Number and Test Notes."); return; }
 
   const systemPrompt = `You are a professional QA Reporting Assistant. Take raw testing notes and format them into a clean daily update.
 Strictly follow this output format:
@@ -404,14 +466,14 @@ Strictly follow this output format:
   const userQuery = `Raw Notes to process:\n${notes}`;
 
   try{
-    setLoading("#dailyLoader", true);
-    hideOutput("#dailyOutput");
+    $("#dailyLoader").style.display = "inline-block";
+    hideWrapper("#dailyOutputWrap");
     const text = await callGemini(apiKey, userQuery, systemPrompt, {});
-    showOutput("#dailyOutput", text);
+    showOutputWithTools("#dailyOutputWrap", text);
     addHistory("Daily Update", notes, text);
   }catch(err){
-    showError("#dailyOutput", err.message || String(err));
-  }finally{ setLoading("#dailyLoader", false); }
+    showError("#dailyOutputWrap", err.message || String(err));
+  }finally{ $("#dailyLoader").style.display = "none"; }
 });
 
 /* ----------------------------- TOOL: Planner ----------------------------- */
@@ -419,7 +481,7 @@ $("#plannerSend").addEventListener("click", async ()=>{
   const apiKey = $("#apiKey").value.trim();
   const topic = $("#plannerTopic").value.trim();
   if(!apiKey){ alert("Paste your Gemini API key in the sidebar first."); return; }
-  if(!topic){ showError("#plannerOutput","Please enter a feature topic or description."); return; }
+  if(!topic){ showError("#plannerOutputWrap","Please enter a feature topic or description."); return; }
 
   const systemPrompt = `You are a creative QA Test Designer. Analyze a feature and suggest Test Cases and critical Edge Cases/Risk Areas.
 Format your response clearly using simple headings and numbered lists. Do not use Markdown.
@@ -428,14 +490,14 @@ Format your response clearly using simple headings and numbered lists. Do not us
   const userQuery = `Feature Topic/Description: ${topic}`;
 
   try{
-    setLoading("#plannerLoader", true);
-    hideOutput("#plannerOutput");
+    $("#plannerLoader").style.display = "inline-block";
+    hideWrapper("#plannerOutputWrap");
     const text = await callGemini(apiKey, userQuery, systemPrompt, {});
-    showOutput("#plannerOutput", text);
+    showOutputWithTools("#plannerOutputWrap", text);
     addHistory("Test Planner", topic, text);
   }catch(err){
-    showError("#plannerOutput", err.message || String(err));
-  }finally{ setLoading("#plannerLoader", false); }
+    showError("#plannerOutputWrap", err.message || String(err));
+  }finally{ $("#plannerLoader").style.display = "none"; }
 });
 
 /* ----------------------------- TOOL: Reporting ----------------------------- */
@@ -443,7 +505,7 @@ $("#reportSend").addEventListener("click", async ()=>{
   const apiKey = $("#apiKey").value.trim();
   const raw = $("#reportRaw").value.trim();
   if(!apiKey){ alert("Paste your Gemini API key in the sidebar first."); return; }
-  if(!raw){ showError("#reportOutput","Please enter the raw text of your bug report."); return; }
+  if(!raw){ showError("#reportOutputWrap","Please enter the raw text of your bug report."); return; }
 
   const systemPrompt = `You are a QA Report Refiner. Take raw bug report text and transform it into a clear, professional report for a developer.
 Strictly follow this formatting:
@@ -451,18 +513,17 @@ Strictly follow this formatting:
 2. Clean up grammar and spelling.
 3. Ensure all issues are in a clean, numbered list (1., 2., 3., etc.).
 4. Do NOT add any extra introductory text or jargon. Just provide the list.`;
-
   const userQuery = `Raw Bug Report Text:\n${raw}`;
 
   try{
-    setLoading("#reportLoader", true);
-    hideOutput("#reportOutput");
+    $("#reportLoader").style.display = "inline-block";
+    hideWrapper("#reportOutputWrap");
     const text = await callGemini(apiKey, userQuery, systemPrompt, {});
-    showOutput("#reportOutput", text);
+    showOutputWithTools("#reportOutputWrap", text);
     addHistory("Reporting Helper", raw, text);
   }catch(err){
-    showError("#reportOutput", err.message || String(err));
-  }finally{ setLoading("#reportLoader", false); }
+    showError("#reportOutputWrap", err.message || String(err));
+  }finally{ $("#reportLoader").style.display = "none"; }
 });
 
 /* ----------------------------- TOOL: Smart Assign ----------------------------- */
@@ -471,9 +532,8 @@ $("#assignSend").addEventListener("click", async ()=>{
   const list = $("#assignList").value.trim();
   const notes = $("#assignNotes").value.trim();
   if(!apiKey){ alert("Paste your Gemini API key in the sidebar first."); return; }
-  if(!list || !notes){ showError("#assignOutput","Please enter Release Notes and the list of Assignees."); return; }
+  if(!list || !notes){ showError("#assignOutputWrap","Please enter Release Notes and the list of Assignees."); return; }
 
-  // Ask model to process same logic as our parser but via AI (explicit instructions)
   const systemPrompt = `You are a simple delegation tool. Analyze release notes, categorize tasks, and assign them based on the assignees mapping provided.
 Assignees list format: "Name: keyword1, keyword2".
 Rules:
@@ -487,14 +547,14 @@ Format the final output as the original notes with assignments appended where ap
   const userQuery = `Assignees:\n${list}\n\nRelease Notes:\n${notes}`;
 
   try{
-    setLoading("#assignLoader", true);
-    hideOutput("#assignOutput");
+    $("#assignLoader").style.display = "inline-block";
+    hideWrapper("#assignOutputWrap");
     const text = await callGemini(apiKey, userQuery, systemPrompt, {});
-    showOutput("#assignOutput", text);
+    showOutputWithTools("#assignOutputWrap", text);
     addHistory("Smart Assign", `${list}\n---\n${notes}`, text);
   }catch(err){
-    showError("#assignOutput", err.message || String(err));
-  }finally{ setLoading("#assignLoader", false); }
+    showError("#assignOutputWrap", err.message || String(err));
+  }finally{ $("#assignLoader").style.display = "none"; }
 });
 
 /* ----------------------------- TOOL: JSON Modifier (AI) ----------------------------- */
@@ -503,56 +563,77 @@ $("#jsonSend").addEventListener("click", async ()=>{
   const raw = $("#jsonRaw").value.trim();
   const instr = $("#jsonInstr").value.trim();
   if(!apiKey){ alert("Paste your Gemini API key in the sidebar first."); return; }
-  if(!raw){ showError("#jsonOutput","Please paste some JSON first."); return; }
-  try{
-    // Validate JSON first
-    JSON.parse(raw);
-  }catch(e){
-    showError("#jsonOutput","Invalid JSON — please correct before sending to AI.");
-    return;
-  }
+  if(!raw){ showError("#jsonOutputWrap","Please paste some JSON first."); return; }
+  try{ JSON.parse(raw); } catch(e){ showError("#jsonOutputWrap","Invalid JSON — please correct before sending to AI."); return; }
 
   const systemPrompt = `You are a JSON editor assistant. Given a JSON object and an instruction, produce the edited JSON object only (no explanation). Preserve top-level keys unless instruction says to add/remove keys. Keep values typed (true/false/null/numbers/strings) where appropriate.`;
   const userQuery = `JSON:\n${raw}\n\nEdit instructions:\n${instr}\n\nReturn only the updated JSON.`;
 
   try{
-    setLoading("#jsonLoader", true);
-    hideOutput("#jsonOutput");
+    $("#jsonLoader").style.display = "inline-block";
+    hideWrapper("#jsonOutputWrap");
     const text = await callGemini(apiKey, userQuery, systemPrompt, {});
-    // Try to parse returned text — sometimes model wraps in code fences, remove backticks
     const cleaned = text.replace(/^\s*```(?:json)?\s*/,'').replace(/\s*```\s*$/,'').trim();
-    // Validate JSON
+    // validate JSON
     const parsed = JSON.parse(cleaned);
     const out = JSON.stringify(parsed, null, 2);
-    showOutput("#jsonOutput", out);
+    // show as code block and provide copy/download
+    showOutputWithTools("#jsonOutputWrap", out);
     addHistory("JSON Modifier", raw, out);
   }catch(err){
-    showError("#jsonOutput", err.message || String(err));
-  }finally{ setLoading("#jsonLoader", false); }
+    showError("#jsonOutputWrap", err.message || String(err));
+  }finally{ $("#jsonLoader").style.display = "none"; }
 });
 
 /* ----------------------------- SAVE/CLEAR KEY & HISTORY ----------------------------- */
-$("#saveKey").addEventListener("click", ()=>{ localStorage.setItem("99gpt_apikey", $("#apiKey").value.trim()); alert("Saved (still client-side)"); });
+$("#saveKey").addEventListener("click", ()=>{ localStorage.setItem("99gpt_apikey", $("#apiKey").value.trim()); alert("Saved (client-side)"); });
 $("#clearKey").addEventListener("click", ()=>{ localStorage.removeItem("99gpt_apikey"); $("#apiKey").value=''; alert("Cleared"); });
 
-$("#exportHistory").addEventListener("click", ()=>{
-  const data = JSON.stringify(loadHistory(), null, 2);
-  const blob = new Blob([data], {type:'application/json'}); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `99gpt_history_${Date.now()}.json`; a.click();
-});
+$("#exportHistory").addEventListener("click", ()=>{ const data = JSON.stringify(loadHistory(), null, 2); const blob = new Blob([data], {type:'application/json'}); const a = document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`99gpt_history_${Date.now()}.json`; a.click(); URL.revokeObjectURL(a.href); });
 $("#clearHistory").addEventListener("click", ()=>{ localStorage.removeItem("99gpt_history"); renderHistoryPreview(); renderHistoryList(); });
+
+/* ----------------------------- HISTORY RENDERING ----------------------------- */
+function renderHistoryPreview(){
+  const preview = $("#historyPreview");
+  if(!preview) return;
+  const list = loadHistory().slice().reverse().slice(0,6);
+  preview.innerHTML = list.length ? list.map(item => `<div style="padding:8px;border-radius:8px;border:1px solid var(--border);background:#fff"><div style="font-weight:700">${escapeHtml(item.tool)}</div><div style="font-size:12px;color:${'#6b7280'}">${new Date(item.timestamp).toLocaleString()}</div></div>`).join("") : '<div class="muted">No recent items</div>';
+}
+
+function renderHistoryList(){
+  const container = $("#historyList");
+  const items = loadHistory().slice().reverse();
+  if(!container) return;
+  if(!items.length){ container.innerHTML = '<div class="muted">No history yet.</div>'; return; }
+  container.innerHTML = '';
+  items.forEach((it, idx) => {
+    const div = document.createElement('div'); div.className='history-item';
+    // render markdown/HTML for output
+    const outHtml = markdownToHtml(it.output);
+    div.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center"><strong>${escapeHtml(it.tool)}</strong><span class="muted">${new Date(it.timestamp).toLocaleString()}</span></div>
+      <div style="margin-top:8px;font-size:13px"><strong>Input:</strong> <div style="font-style:italic;margin-top:6px;white-space:pre-wrap">${escapeHtml(it.input)}</div></div>
+      <div style="margin-top:8px">${outHtml}</div>
+      <div style="margin-top:8px;display:flex;gap:8px">
+        <button data-copy class="btn secondary">Copy Output</button>
+        <button data-download class="btn secondary">Download</button>
+      </div>`;
+    // copy & download handlers
+    div.querySelector('[data-copy]').addEventListener('click', ()=> safeCopy(it.output));
+    div.querySelector('[data-download]').addEventListener('click', ()=>{
+      const blob = new Blob([it.output], {type:'text/plain'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`99GPT_history_${idx}_${Date.now()}.txt`; a.click(); URL.revokeObjectURL(a.href);
+    });
+    container.appendChild(div);
+  });
+}
 
 /* ----------------------------- Init ----------------------------- */
 (function init(){
-  // restore API key if saved
   const savedKey = localStorage.getItem("99gpt_apikey");
   if(savedKey) $("#apiKey").value = savedKey;
-
-  // set default date
   $("#dailyDate").value = (new Date()).toLocaleDateString('en-US',{month:'2-digit',day:'2-digit',year:'2-digit'});
   renderHistoryPreview();
-  // panels already set by html default (daily shown), hide others
+  // hide other panels
   $all(".panel").forEach(p => { if(p.id !== "panel-daily") p.style.display = "none"; });
-  // attach history list update when switching to history tab is handled by tab click
 })();
 </script>
 </body>
