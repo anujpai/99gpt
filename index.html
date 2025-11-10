@@ -1,0 +1,477 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>99GPT QA Suite — Simple</title>
+<style>
+  :root{
+    --bg:#f3f4f6;
+    --card:#ffffff;
+    --accent:#ef4444; /* red */
+    --muted:#6b7280;
+    --border:#e5e7eb;
+    --mono: "SFMono-Regular", Menlo, Monaco, "Roboto Mono", "Courier New", monospace;
+  }
+  html,body{height:100%;margin:0;background:var(--bg);font-family:Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;}
+  .app{max-width:1100px;margin:28px auto;padding:20px;display:grid;grid-template-columns:260px 1fr;gap:20px;}
+  .sidebar{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px;box-shadow:0 6px 18px rgba(15,23,42,0.06);}
+  .logo-row{display:flex;align-items:center;gap:12px;margin-bottom:14px;}
+  .logo-row img{width:44px;height:44px;object-fit:contain;border-radius:8px;}
+  h1{font-size:22px;margin:0}
+  .nav{display:flex;flex-direction:column;gap:8px;margin-top:8px;}
+  .nav button{background:#fff;border:1px solid var(--border);padding:8px 10px;border-radius:8px;text-align:left;cursor:pointer;font-weight:600}
+  .nav button.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+  .small{font-size:12px;color:var(--muted)}
+  .input{width:100%;padding:8px;border-radius:8px;border:1px solid var(--border);box-sizing:border-box}
+  .main{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px;box-shadow:0 6px 18px rgba(15,23,42,0.04);min-height:520px}
+  .tool-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+  .tool-title{font-size:18px;margin:0}
+  .row{display:flex;gap:10px;flex-wrap:wrap}
+  textarea,input[type="text"]{width:100%;min-height:120px;padding:10px;border-radius:8px;border:1px solid var(--border);font-family:var(--mono);box-sizing:border-box}
+  .btn{padding:8px 12px;border-radius:8px;border:0;background:var(--accent);color:#fff;cursor:pointer;font-weight:600}
+  .btn.secondary{background:#fff;color:var(--muted);border:1px solid var(--border)}
+  .spaced{margin-top:12px}
+  .output{margin-top:12px;padding:12px;border-radius:8px;border:1px dashed var(--border);background:#fff;white-space:pre-wrap}
+  .history-card{padding:10px;border-radius:8px;border:1px solid var(--border);background:#fff;margin-bottom:10px}
+  .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  label.smallblock{display:block;margin-bottom:6px;font-size:13px;color:var(--muted)}
+  .controls{display:flex;gap:8px;align-items:center;margin-top:8px}
+  .top-actions{display:flex;gap:8px;align-items:center;margin-top:12px}
+  .muted{color:var(--muted);font-size:13px}
+  .code-input{font-family:var(--mono);min-height:160px;padding:10px}
+  footer{margin-top:18px;font-size:12px;color:var(--muted)}
+  .flex-between{display:flex;justify-content:space-between;align-items:center}
+  .danger{background:#fee2e2;color:#991b1b;border:1px solid #fecaca}
+  .success{background:#ecfdf5;color:#064e3b;border:1px solid #bbf7d0}
+  @media (max-width:900px){.app{grid-template-columns:1fr; padding:12px} .sidebar{order:2} .main{order:1}}
+</style>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="logo-row">
+        <img src="cube.gif" alt="Logo" />
+        <div>
+          <h1>99GPT QA Suite</h1>
+          <div class="small">QA helpers — quick & simple</div>
+        </div>
+      </div>
+
+      <nav class="nav" id="tabs">
+        <button data-tab="daily" class="active">Daily Update</button>
+        <button data-tab="planner">Test Planner</button>
+        <button data-tab="report">Reporting Helper</button>
+        <button data-tab="assign">Smart Assign</button>
+        <button data-tab="json">JSON Modifier</button>
+        <button data-tab="history">History</button>
+      </nav>
+
+      <div class="spaced">
+        <div class="small">Gemini API Key (optional)</div>
+        <input id="apiKey" class="input spaced" type="password" placeholder="Enter key" />
+        <div class="top-actions">
+          <button id="exportHistoryBtn" class="btn secondary">Export History</button>
+          <button id="clearHistoryBtn" class="btn secondary">Clear</button>
+        </div>
+        <div style="margin-top:8px" class="muted">Last saved: <span id="lastSaved">—</span></div>
+      </div>
+    </aside>
+
+    <main class="main">
+      <!-- DAILY -->
+      <div id="panel-daily" class="panel">
+        <div class="tool-header">
+          <h2 class="tool-title">QA Daily Update Formatter</h2>
+        </div>
+
+        <div class="form-grid">
+          <div>
+            <label class="smallblock">Report Date (MM/DD/YY)</label>
+            <input id="dailyDate" class="input" type="text" />
+          </div>
+          <div>
+            <label class="smallblock">Build Number</label>
+            <input id="dailyBuild" class="input" type="text" placeholder="e.g., 37" />
+          </div>
+        </div>
+
+        <div class="spaced">
+          <label class="smallblock">Raw Test Notes</label>
+          <textarea id="dailyNotes" class="code-input" placeholder="- Side menu UI good\n- Edit profile picture flow broken"></textarea>
+        </div>
+
+        <div class="controls">
+          <button id="dailyGen" class="btn">Generate Polished Update</button>
+          <button id="dailyReset" class="btn secondary">Reset</button>
+        </div>
+
+        <div id="dailyOutput" class="output" style="display:none"></div>
+      </div>
+
+      <!-- PLANNER -->
+      <div id="panel-planner" class="panel" style="display:none">
+        <div class="tool-header"><h2 class="tool-title">Edge Cases & Test Planner</h2></div>
+        <label class="smallblock">Feature Topic or Description</label>
+        <textarea id="plannerTopic" class="code-input" placeholder="e.g., New 'Piggy Bank' IAP feature"></textarea>
+        <div class="controls">
+          <button id="plannerGen" class="btn">Generate Edge Cases & Test Plan</button>
+          <button id="plannerClear" class="btn secondary">Clear</button>
+        </div>
+        <div id="plannerOutput" class="output" style="display:none"></div>
+      </div>
+
+      <!-- REPORT -->
+      <div id="panel-report" class="panel" style="display:none">
+        <div class="tool-header"><h2 class="tool-title">Professional Reporting Helper</h2></div>
+        <label class="smallblock">Raw Bug Report Text</label>
+        <textarea id="reportRaw" class="code-input" placeholder="e.g., IAP $99 pack value is wrong"></textarea>
+        <div class="controls">
+          <button id="reportGen" class="btn">Improve Report Clarity</button>
+          <button id="reportClear" class="btn secondary">Clear</button>
+        </div>
+        <div id="reportOutput" class="output" style="display:none"></div>
+      </div>
+
+      <!-- ASSIGN -->
+      <div id="panel-assign" class="panel" style="display:none">
+        <div class="tool-header"><h2 class="tool-title">Smart Assignment Generator</h2></div>
+
+        <label class="smallblock">Assignees List (name: keywords comma-separated)</label>
+        <input id="assignList" class="input" placeholder="e.g., ajay: roundoff, anuj: daily login, networth" />
+
+        <label class="smallblock spaced">Release Notes / Tasks</label>
+        <textarea id="assignNotes" class="code-input" placeholder="Example:\nPOC Manoj\nRound off logic for spin corrected\nNetworth screen added\nPOC : Shreya\nFeature : Daily login bonus\nDaily login bonus logic added"></textarea>
+
+        <div class="controls">
+          <button id="assignGen" class="btn">Categorize and Assign</button>
+          <button id="assignClear" class="btn secondary">Clear</button>
+        </div>
+
+        <div id="assignOutput" class="output" style="display:none"></div>
+      </div>
+
+      <!-- JSON MODIFIER -->
+      <div id="panel-json" class="panel" style="display:none">
+        <div class="tool-header"><h2 class="tool-title">JSON Modifier</h2></div>
+
+        <label class="smallblock">Paste JSON here</label>
+        <textarea id="jsonRaw" class="code-input" placeholder='e.g., {"key":"value"}'></textarea>
+        <div class="controls">
+          <button id="jsonParse" class="btn">Parse</button>
+          <button id="jsonClear" class="btn secondary">Clear</button>
+        </div>
+
+        <div id="jsonEditor" style="margin-top:12px;display:none">
+          <div id="jsonFields"></div>
+          <div class="controls spaced">
+            <button id="jsonApply" class="btn">Apply Edits</button>
+            <button id="jsonCopy" class="btn secondary">Copy JSON</button>
+            <button id="jsonDownload" class="btn secondary">Download</button>
+          </div>
+        </div>
+
+        <div id="jsonOutput" class="output" style="display:none"></div>
+      </div>
+
+      <!-- HISTORY -->
+      <div id="panel-history" class="panel" style="display:none">
+        <div class="tool-header flex-between">
+          <h2 class="tool-title">Generation History</h2>
+          <div class="muted">Stored in browser</div>
+        </div>
+        <div id="historyList"></div>
+        <div class="controls spaced">
+          <button id="historyExport" class="btn secondary">Export</button>
+          <button id="historyClear" class="btn secondary">Clear</button>
+        </div>
+      </div>
+
+      <footer style="margin-top:18px" class="muted">Tip: app stores history in your browser only. Use Export to save.</footer>
+    </main>
+  </div>
+
+<script>
+/* ----------------- Utilities ----------------- */
+
+function $(sel){return document.querySelector(sel)}
+function $all(sel){return Array.from(document.querySelectorAll(sel))}
+
+function nowDate() {
+  const d = new Date();
+  const mm = String(d.getMonth()+1).padStart(2,'0');
+  const dd = String(d.getDate()).padStart(2,'0');
+  const yy = String(d.getFullYear()).slice(-2);
+  return mm + '/' + dd + '/' + yy;
+}
+
+/* Safe copy with fallback */
+async function safeCopy(text) {
+  if (!text) return false;
+  try {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      await navigator.clipboard.writeText(text);
+      return true;
+    }
+  } catch(e){ /* fall through */ }
+  try {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.setAttribute('readonly','');
+    ta.style.position='absolute';
+    ta.style.left='-9999px';
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    return true;
+  } catch(e) {
+    alert('Copying is blocked here — use Download button.');
+    return false;
+  }
+}
+
+/* localStorage history helpers */
+function loadHistory() {
+  try { return JSON.parse(localStorage.getItem('99gpt_history')||'[]') } catch(e){ return [] }
+}
+function saveHistory(arr) {
+  try { localStorage.setItem('99gpt_history', JSON.stringify(arr)) } catch(e){}
+}
+function pushHistory(tool,input,output) {
+  const h = loadHistory();
+  h.push({tool,input: input.slice(0,1000), output, timestamp: Date.now()});
+  saveHistory(h);
+  renderLastSaved();
+}
+
+/* sanitize allowing <b> only */
+function sanitizeAllowBold(s) {
+  if (!s) return '';
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+          .replace(/&lt;b&gt;/g,'<b>').replace(/&lt;\/b&gt;/g,'</b>').replace(/\n/g,'\n');
+}
+
+/* ----------------- Tabs ----------------- */
+$all('#tabs button').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    $all('#tabs button').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    const t = btn.dataset.tab;
+    $all('.panel').forEach(p=>p.style.display='none');
+    $(`#panel-${t}`).style.display='block';
+    window.scrollTo({top:0,behavior:'smooth'});
+  });
+});
+
+/* ----------------- Daily Update ----------------- */
+const dailyDate = $('#dailyDate'), dailyBuild = $('#dailyBuild'), dailyNotes = $('#dailyNotes'), dailyOutput = $('#dailyOutput');
+dailyDate.value = nowDate();
+
+$('#dailyGen').addEventListener('click', ()=>{
+  const notes = dailyNotes.value.trim();
+  const build = dailyBuild.value.trim();
+  const date = dailyDate.value.trim() || nowDate();
+  if (!notes || !build) { dailyOutput.style.display='block'; dailyOutput.textContent='Error: Please enter a Build Number and your Test Notes.'; return; }
+  const bullets = notes.split(/\n+/).map(s=>s.trim()).filter(Boolean);
+  const numbered = bullets.map((b,i)=>`${i+1}. ${b}`).join('\n');
+  const res = `Test covered (${date})\n<b>Mojo Build ${build}</b>\nTested\n${numbered}`;
+  dailyOutput.style.display='block';
+  dailyOutput.innerHTML = sanitizeAllowBold(res);
+  pushHistory('Daily Update', notes, res);
+});
+
+$('#dailyReset').addEventListener('click', ()=>{ dailyNotes.value=''; dailyBuild.value=''; dailyOutput.style.display='none' })
+
+/* ----------------- Planner ----------------- */
+$('#plannerGen').addEventListener('click', ()=>{
+  const topic = $('#plannerTopic').value.trim();
+  if (!topic) { $('#plannerOutput').style.display='block'; $('#plannerOutput').textContent='Error: Please enter a feature topic or description.'; return; }
+  const res = `Test cases for: ${topic}\n1. ...`;
+  $('#plannerOutput').style.display='block'; $('#plannerOutput').textContent = res;
+  pushHistory('Test Planner', topic, res);
+});
+$('#plannerClear').addEventListener('click', ()=>{ $('#plannerTopic').value=''; $('#plannerOutput').style.display='none' })
+
+/* ----------------- Reporting ----------------- */
+$('#reportGen').addEventListener('click', ()=>{
+  const raw = $('#reportRaw').value.trim();
+  if (!raw) { $('#reportOutput').style.display='block'; $('#reportOutput').textContent='Error: Please enter the raw text of your bug report.'; return; }
+  const res = `<b>IAP Related issues</b>\n1. ${raw}`;
+  $('#reportOutput').style.display='block'; $('#reportOutput').innerHTML = sanitizeAllowBold(res);
+  pushHistory('Reporting Helper', raw, res);
+});
+$('#reportClear').addEventListener('click', ()=>{ $('#reportRaw').value=''; $('#reportOutput').style.display='none' })
+
+/* ----------------- Smart Assign (parser) ----------------- */
+
+/* parseAssigneesInput same behavior as earlier */
+function parseAssigneesInput(raw) {
+  const tokens = raw.split(/\n|;/).map(t=>t.trim()).filter(Boolean).flatMap(t=>t.split(',').map(s=>s.trim()).filter(Boolean));
+  const out = [];
+  for (const tok of tokens) {
+    const idx = tok.indexOf(':');
+    if (idx === -1) continue;
+    const name = tok.slice(0,idx).trim();
+    let keywords = tok.slice(idx+1).trim();
+    if (!name) continue;
+    let kws = keywords.split(',').map(k=>k.trim()).filter(Boolean);
+    if (kws.length===1 && kws[0].includes(' ')) {
+      kws = kws[0].split(/\s+/).map(k=>k.trim()).filter(Boolean);
+    }
+    out.push({name, keywords: kws.map(k=>k.toLowerCase())});
+  }
+  return out;
+}
+
+function processSmartAssign(assigneesInput, releaseNotes) {
+  const assignees = parseAssigneesInput(assigneesInput);
+  const lines = releaseNotes.split(/\r?\n/);
+  const findAssigneeForLine = (line) => {
+    const l = line.toLowerCase();
+    for (const a of assignees) {
+      for (const kw of a.keywords) {
+        if (!kw) continue;
+        if (l.includes(kw)) return a.name;
+      }
+    }
+    return null;
+  };
+  const outLines = [];
+  for (let rawLine of lines) {
+    const line = rawLine.trim();
+    if (!line) { outLines.push(''); continue; }
+    if (/^POC\b/i.test(line) || /^POC\s*:/i.test(line)) { outLines.push(rawLine); continue; }
+    if (/^Feature\b/i.test(line) || /^Feature\s*:/i.test(line)) { outLines.push(rawLine); continue; }
+    const assignee = findAssigneeForLine(line);
+    if (assignee) outLines.push(`${rawLine} : ${assignee}`); else outLines.push(rawLine);
+  }
+  return outLines.join('\n');
+}
+
+$('#assignGen').addEventListener('click', ()=>{
+  const list = $('#assignList').value.trim();
+  const notes = $('#assignNotes').value.trim();
+  if (!list || !notes) { $('#assignOutput').style.display='block'; $('#assignOutput').textContent='Error: Please enter Release Notes and the list of Assignees.'; return; }
+  const res = processSmartAssign(list, notes);
+  $('#assignOutput').style.display='block'; $('#assignOutput').textContent = res;
+  pushHistory('Smart Assign', `${list}\n---\n${notes}`, res);
+});
+$('#assignClear').addEventListener('click', ()=>{ $('#assignList').value=''; $('#assignNotes').value=''; $('#assignOutput').style.display='none' })
+
+/* ----------------- JSON Modifier ----------------- */
+
+let currentObj = null;
+$('#jsonParse').addEventListener('click', ()=>{
+  const raw = $('#jsonRaw').value.trim();
+  try {
+    currentObj = JSON.parse(raw);
+    renderJsonEditor();
+    $('#jsonOutput').style.display='none';
+    $('#jsonEditor').style.display='block';
+  } catch(e) {
+    $('#jsonOutput').style.display='block';
+    $('#jsonOutput').textContent = 'Invalid JSON';
+  }
+});
+
+$('#jsonClear').addEventListener('click', ()=>{ $('#jsonRaw').value=''; currentObj = null; $('#jsonEditor').style.display='none'; $('#jsonOutput').style.display='none' })
+
+function renderJsonEditor() {
+  const container = $('#jsonFields'); container.innerHTML = '';
+  if (!currentObj || typeof currentObj !== 'object') return;
+  Object.keys(currentObj).forEach(k=>{
+    const row = document.createElement('div'); row.style.display='flex'; row.style.gap='8px'; row.style.marginBottom='8px';
+    const keyDiv = document.createElement('div'); keyDiv.style.width='160px'; keyDiv.textContent=k; keyDiv.style.color='#374151';
+    const input = document.createElement('input'); input.className='input'; input.value = String(currentObj[k]); input.style.flex='1';
+    input.addEventListener('input', ()=>{ currentObj[k] = tryParseValue(input.value) });
+    row.appendChild(keyDiv); row.appendChild(input); container.appendChild(row);
+  });
+}
+
+function tryParseValue(v) {
+  if (v === 'null') return null;
+  if (v === 'true') return true;
+  if (v === 'false') return false;
+  const n = Number(v);
+  if (!Number.isNaN(n) && String(n) === v) return n;
+  return v;
+}
+
+$('#jsonApply').addEventListener('click', ()=>{
+  try {
+    const out = JSON.stringify(currentObj, null, 2);
+    $('#jsonOutput').style.display='block';
+    $('#jsonOutput').textContent = out;
+    pushHistory('JSON Modifier', $('#jsonRaw').value, out);
+    $('#jsonRaw').value = out;
+  } catch(e) {
+    $('#jsonOutput').style.display='block';
+    $('#jsonOutput').textContent = 'Could not stringify object';
+  }
+});
+
+$('#jsonCopy').addEventListener('click', ()=>{ if (currentObj) safeCopy(JSON.stringify(currentObj, null, 2)) })
+$('#jsonDownload').addEventListener('click', ()=>{
+  if (!currentObj) return;
+  const blob = new Blob([JSON.stringify(currentObj, null, 2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob); const a = document.createElement('a');
+  a.href = url; a.download = `config_${Date.now()}.json`; a.click(); URL.revokeObjectURL(url);
+});
+
+/* ----------------- History ----------------- */
+
+function renderHistoryList() {
+  const list = loadHistory();
+  const container = $('#historyList'); container.innerHTML = '';
+  if (!list.length) {
+    container.innerHTML = '<div class="muted">No history yet.</div>';
+    return;
+  }
+  list.slice().reverse().forEach(item=>{
+    const div = document.createElement('div'); div.className='history-card';
+    div.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+      <div style="font-weight:700;color:${getComputedStyle(document.documentElement).getPropertyValue('--accent')||'#ef4444'}">${item.tool}</div>
+      <div style="font-size:12px;color:#6b7280">${new Date(item.timestamp).toLocaleString()}</div>
+    </div>
+    <div style="font-size:13px;margin-bottom:6px"><strong>Input:</strong> <span style="font-style:italic">${escapeHtml(item.input).slice(0,300)}${item.input.length>300?'...':''}</span></div>
+    <div style="background:#fff;padding:8px;border-radius:6px;border:1px solid #eee;white-space:pre-wrap">${sanitizeAllowBold(item.output)}</div>
+    `;
+    container.appendChild(div);
+  });
+}
+
+function escapeHtml(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+$('#historyExport').addEventListener('click', ()=>{
+  const data = JSON.stringify(loadHistory(), null, 2);
+  const blob = new Blob([data], {type:'application/json'});
+  const url = URL.createObjectURL(blob); const a = document.createElement('a');
+  a.href = url; a.download = `99GPT_history_${Date.now()}.json`; a.click(); URL.revokeObjectURL(url);
+});
+$('#historyClear').addEventListener('click', ()=>{ localStorage.removeItem('99gpt_history'); renderHistoryList(); renderLastSaved(); });
+
+$('#exportHistoryBtn').addEventListener('click', ()=>$('#historyExport').click());
+$('#clearHistoryBtn').addEventListener('click', ()=>{ localStorage.removeItem('99gpt_history'); renderHistoryList(); renderLastSaved(); });
+
+function renderLastSaved(){
+  const h = loadHistory();
+  $('#lastSaved').textContent = h.length ? new Date(h[h.length-1].timestamp).toLocaleString() : '—';
+}
+
+/* ----------------- small helpers ----------------- */
+
+function init() {
+  // Set panels visibility initially
+  $all('.panel').forEach(p=>p.style.display='none');
+  $('#panel-daily').style.display='block';
+  renderHistoryList();
+  renderLastSaved();
+}
+init();
+
+/* ----------------- misc ----------------- */
+// hook save when panels generate if needed (pushHistory called)
+</script>
+</body>
+</html>
