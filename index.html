@@ -1,60 +1,81 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>99GPT QA Suite — Simple</title>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>99GPT QA Suite — AI (Gemini)</title>
 <style>
+  /* ---------- Simple reset & Arial only ---------- */
+  html,body{height:100%;margin:0;font-family: Arial, Helvetica, sans-serif;background:#fafafa;-webkit-font-smoothing:antialiased;line-height:1.4;color:#111}
   :root{
-    --bg:#f3f4f6;
-    --card:#ffffff;
     --accent:#ef4444; /* red */
+    --accent-dark:#b91c1c;
     --muted:#6b7280;
-    --border:#e5e7eb;
-    --mono: "SFMono-Regular", Menlo, Monaco, "Roboto Mono", "Courier New", monospace;
+    --card:#ffffff;
+    --glass: rgba(255,255,255,0.8);
+    --border:#e6e6e6;
+    --shadow: 0 8px 32px rgba(0,0,0,0.06);
+    --radius:14px;
   }
-  html,body{height:100%;margin:0;background:var(--bg);font-family:Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;}
-  .app{max-width:1100px;margin:28px auto;padding:20px;display:grid;grid-template-columns:260px 1fr;gap:20px;}
-  .sidebar{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px;box-shadow:0 6px 18px rgba(15,23,42,0.06);}
-  .logo-row{display:flex;align-items:center;gap:12px;margin-bottom:14px;}
-  .logo-row img{width:44px;height:44px;object-fit:contain;border-radius:8px;}
-  h1{font-size:22px;margin:0}
-  .nav{display:flex;flex-direction:column;gap:8px;margin-top:8px;}
-  .nav button{background:#fff;border:1px solid var(--border);padding:8px 10px;border-radius:8px;text-align:left;cursor:pointer;font-weight:600}
-  .nav button.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+
+  /* ---------- Layout ---------- */
+  .wrap{max-width:1200px;margin:28px auto;padding:20px;display:grid;grid-template-columns:280px 1fr;gap:20px;align-items:start}
+  .sidebar{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:18px;box-shadow:var(--shadow)}
+  .main{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:22px;box-shadow:var(--shadow);min-height:620px}
+
+  /* ---------- Sidebar ---------- */
+  .brand{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+  .brand img{width:48px;height:48px;border-radius:10px;object-fit:contain}
+  .brand h1{font-size:18px;margin:0}
   .small{font-size:12px;color:var(--muted)}
-  .input{width:100%;padding:8px;border-radius:8px;border:1px solid var(--border);box-sizing:border-box}
-  .main{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px;box-shadow:0 6px 18px rgba(15,23,42,0.04);min-height:520px}
-  .tool-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
-  .tool-title{font-size:18px;margin:0}
+  .nav{display:flex;flex-direction:column;gap:8px;margin-top:10px}
+  .nav button{background:#fff;border:1px solid var(--border);padding:10px;border-radius:10px;text-align:left;cursor:pointer;font-weight:700}
+  .nav button.active{background:linear-gradient(180deg,var(--accent),var(--accent-dark));color:#fff;border-color:var(--accent-dark)}
+  .section{margin-top:16px;border-top:1px solid var(--border);padding-top:14px}
+
+  /* ---------- Controls ---------- */
+  input[type="text"], input[type="password"], textarea{
+    width:100%;padding:10px;border-radius:8px;border:1px solid var(--border);box-sizing:border-box;font-family:Arial,monospace;
+  }
+  textarea{min-height:120px;resize:vertical}
   .row{display:flex;gap:10px;flex-wrap:wrap}
-  textarea,input[type="text"]{width:100%;min-height:120px;padding:10px;border-radius:8px;border:1px solid var(--border);font-family:var(--mono);box-sizing:border-box}
-  .btn{padding:8px 12px;border-radius:8px;border:0;background:var(--accent);color:#fff;cursor:pointer;font-weight:600}
-  .btn.secondary{background:#fff;color:var(--muted);border:1px solid var(--border)}
-  .spaced{margin-top:12px}
-  .output{margin-top:12px;padding:12px;border-radius:8px;border:1px dashed var(--border);background:#fff;white-space:pre-wrap}
-  .history-card{padding:10px;border-radius:8px;border:1px solid var(--border);background:#fff;margin-bottom:10px}
-  .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-  label.smallblock{display:block;margin-bottom:6px;font-size:13px;color:var(--muted)}
-  .controls{display:flex;gap:8px;align-items:center;margin-top:8px}
+  .btn{background:var(--accent);color:#fff;padding:9px 12px;border-radius:10px;border:0;cursor:pointer;font-weight:700;box-shadow:0 6px 18px rgba(239,68,68,0.12)}
+  .btn.secondary{background:#fff;color:#111;border:1px solid var(--border);font-weight:700}
+  .muted{color:var(--muted)}
+  .control-group{margin-top:8px;display:flex;gap:8px;flex-wrap:wrap}
+
+  /* ---------- Cards & outputs ---------- */
+  .card{background:linear-gradient(180deg,#fff,#fcfcfc);border-radius:10px;padding:12px;border:1px solid var(--border);box-shadow:0 8px 20px rgba(15,23,42,0.03)}
+  .output{white-space:pre-wrap;font-family:Arial, monospace;margin-top:12px;background:#fff;padding:12px;border-radius:8px;border:1px dashed var(--border)}
+  .error{background:#fff5f5;color:#7f1d1d;padding:10px;border-radius:8px;border:1px solid #fecaca}
+  .label{font-size:13px;font-weight:700;margin-bottom:6px}
+
+  /* ---------- small helpers ---------- */
   .top-actions{display:flex;gap:8px;align-items:center;margin-top:12px}
-  .muted{color:var(--muted);font-size:13px}
-  .code-input{font-family:var(--mono);min-height:160px;padding:10px}
-  footer{margin-top:18px;font-size:12px;color:var(--muted)}
-  .flex-between{display:flex;justify-content:space-between;align-items:center}
-  .danger{background:#fee2e2;color:#991b1b;border:1px solid #fecaca}
-  .success{background:#ecfdf5;color:#064e3b;border:1px solid #bbf7d0}
-  @media (max-width:900px){.app{grid-template-columns:1fr; padding:12px} .sidebar{order:2} .main{order:1}}
+  .history-list{max-height:220px;overflow:auto;margin-top:10px;display:flex;flex-direction:column;gap:8px}
+  .history-item{background:#fff;padding:10px;border-radius:8px;border:1px solid var(--border)}
+  footer{margin-top:14px;font-size:12px;color:var(--muted)}
+
+  /* ---------- responsive ---------- */
+  @media (max-width:980px){
+    .wrap{grid-template-columns:1fr; padding:12px}
+    .sidebar{order:2}
+    .main{order:1}
+  }
+
+  /* spinner */
+  .spinner{width:18px;height:18px;border-radius:50%;border:3px solid rgba(255,255,255,0.3);border-top-color:#fff;animation:spin 1s linear infinite;display:inline-block;vertical-align:middle}
+  @keyframes spin{to{transform:rotate(360deg)}}
 </style>
 </head>
 <body>
-  <div class="app">
+  <div class="wrap">
     <aside class="sidebar">
-      <div class="logo-row">
-        <img src="cube.gif" alt="Logo" />
+      <div class="brand">
+        <img src="cube.gif" alt="cube"/>
         <div>
           <h1>99GPT QA Suite</h1>
-          <div class="small">QA helpers — quick & simple</div>
+          <div class="small">AI-powered QA helpers</div>
         </div>
       </div>
 
@@ -67,411 +88,472 @@
         <button data-tab="history">History</button>
       </nav>
 
-      <div class="spaced">
-        <div class="small">Gemini API Key (optional)</div>
-        <input id="apiKey" class="input spaced" type="password" placeholder="Enter key" />
+      <div class="section">
+        <div class="label">Gemini API Key</div>
+        <input id="apiKey" type="password" placeholder="Paste your Gemini API key here (unsafe in production)"/>
         <div class="top-actions">
-          <button id="exportHistoryBtn" class="btn secondary">Export History</button>
-          <button id="clearHistoryBtn" class="btn secondary">Clear</button>
+          <button id="saveKey" class="btn secondary">Save Key</button>
+          <button id="clearKey" class="btn secondary">Clear Key</button>
         </div>
-        <div style="margin-top:8px" class="muted">Last saved: <span id="lastSaved">—</span></div>
+        <div style="margin-top:10px" class="muted">Warning: client-side keys are public. Use server proxy for production.</div>
+      </div>
+
+      <div class="section">
+        <div class="label">History</div>
+        <div class="history-list card" id="historyPreview"></div>
+        <div class="control-group" style="margin-top:10px">
+          <button id="exportHistory" class="btn secondary">Export</button>
+          <button id="clearHistory" class="btn secondary">Clear</button>
+        </div>
       </div>
     </aside>
 
     <main class="main">
-      <!-- DAILY -->
-      <div id="panel-daily" class="panel">
-        <div class="tool-header">
-          <h2 class="tool-title">QA Daily Update Formatter</h2>
+      <!-- Daily Update -->
+      <div id="panel-daily" class="card panel">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <h2 style="margin:0">QA Daily Update Formatter</h2>
+          <div class="muted">Powered by Gemini</div>
         </div>
 
-        <div class="form-grid">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px">
           <div>
-            <label class="smallblock">Report Date (MM/DD/YY)</label>
-            <input id="dailyDate" class="input" type="text" />
+            <div class="label">Report Date (MM/DD/YY)</div>
+            <input id="dailyDate" type="text" />
           </div>
           <div>
-            <label class="smallblock">Build Number</label>
-            <input id="dailyBuild" class="input" type="text" placeholder="e.g., 37" />
+            <div class="label">Build Number</div>
+            <input id="dailyBuild" type="text" placeholder="e.g., 37" />
           </div>
         </div>
 
-        <div class="spaced">
-          <label class="smallblock">Raw Test Notes</label>
-          <textarea id="dailyNotes" class="code-input" placeholder="- Side menu UI good\n- Edit profile picture flow broken"></textarea>
+        <div style="margin-top:12px">
+          <div class="label">Raw Test Notes</div>
+          <textarea id="dailyNotes" placeholder="- note 1\n- note 2"></textarea>
         </div>
 
-        <div class="controls">
-          <button id="dailyGen" class="btn">Generate Polished Update</button>
+        <div class="top-actions">
+          <button id="dailySend" class="btn">Generate Polished Update</button>
           <button id="dailyReset" class="btn secondary">Reset</button>
+          <div id="dailyLoader" style="display:none"><span class="spinner"></span></div>
         </div>
 
-        <div id="dailyOutput" class="output" style="display:none"></div>
+        <div id="dailyOutput" class="output" style="display:none;margin-top:12px"></div>
       </div>
 
-      <!-- PLANNER -->
-      <div id="panel-planner" class="panel" style="display:none">
-        <div class="tool-header"><h2 class="tool-title">Edge Cases & Test Planner</h2></div>
-        <label class="smallblock">Feature Topic or Description</label>
-        <textarea id="plannerTopic" class="code-input" placeholder="e.g., New 'Piggy Bank' IAP feature"></textarea>
-        <div class="controls">
-          <button id="plannerGen" class="btn">Generate Edge Cases & Test Plan</button>
+      <!-- Planner -->
+      <div id="panel-planner" class="card panel" style="display:none;margin-top:14px">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <h2 style="margin:0">Edge Cases & Test Planner</h2>
+          <div class="muted">Ask the model to find edge cases</div>
+        </div>
+
+        <div style="margin-top:12px">
+          <div class="label">Feature topic / description</div>
+          <textarea id="plannerTopic" placeholder="Describe the feature..."></textarea>
+        </div>
+
+        <div class="top-actions">
+          <button id="plannerSend" class="btn">Generate Test Plan</button>
           <button id="plannerClear" class="btn secondary">Clear</button>
+          <div id="plannerLoader" style="display:none"><span class="spinner"></span></div>
         </div>
-        <div id="plannerOutput" class="output" style="display:none"></div>
+
+        <div id="plannerOutput" class="output" style="display:none;margin-top:12px"></div>
       </div>
 
-      <!-- REPORT -->
-      <div id="panel-report" class="panel" style="display:none">
-        <div class="tool-header"><h2 class="tool-title">Professional Reporting Helper</h2></div>
-        <label class="smallblock">Raw Bug Report Text</label>
-        <textarea id="reportRaw" class="code-input" placeholder="e.g., IAP $99 pack value is wrong"></textarea>
-        <div class="controls">
-          <button id="reportGen" class="btn">Improve Report Clarity</button>
+      <!-- Reporting -->
+      <div id="panel-report" class="card panel" style="display:none;margin-top:14px">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <h2 style="margin:0">Professional Reporting Helper</h2>
+          <div class="muted">Make bug reports dev-ready</div>
+        </div>
+
+        <div style="margin-top:12px">
+          <div class="label">Raw bug report text</div>
+          <textarea id="reportRaw" placeholder="Write the raw report..."></textarea>
+        </div>
+
+        <div class="top-actions">
+          <button id="reportSend" class="btn">Improve Report</button>
           <button id="reportClear" class="btn secondary">Clear</button>
+          <div id="reportLoader" style="display:none"><span class="spinner"></span></div>
         </div>
-        <div id="reportOutput" class="output" style="display:none"></div>
+
+        <div id="reportOutput" class="output" style="display:none;margin-top:12px"></div>
       </div>
 
-      <!-- ASSIGN -->
-      <div id="panel-assign" class="panel" style="display:none">
-        <div class="tool-header"><h2 class="tool-title">Smart Assignment Generator</h2></div>
+      <!-- Smart Assign -->
+      <div id="panel-assign" class="card panel" style="display:none;margin-top:14px">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <h2 style="margin:0">Smart Assignment Generator</h2>
+          <div class="muted">Assign tasks to people</div>
+        </div>
 
-        <label class="smallblock">Assignees List (name: keywords comma-separated)</label>
-        <input id="assignList" class="input" placeholder="e.g., ajay: roundoff, anuj: daily login, networth" />
+        <div style="margin-top:12px">
+          <div class="label">Assignees list (name: keywords)</div>
+          <input id="assignList" type="text" placeholder="e.g., ajay: roundoff, anuj: daily login" />
+        </div>
 
-        <label class="smallblock spaced">Release Notes / Tasks</label>
-        <textarea id="assignNotes" class="code-input" placeholder="Example:\nPOC Manoj\nRound off logic for spin corrected\nNetworth screen added\nPOC : Shreya\nFeature : Daily login bonus\nDaily login bonus logic added"></textarea>
+        <div style="margin-top:8px">
+          <div class="label">Release notes / tasks</div>
+          <textarea id="assignNotes" placeholder="Paste release notes..."></textarea>
+        </div>
 
-        <div class="controls">
-          <button id="assignGen" class="btn">Categorize and Assign</button>
+        <div class="top-actions">
+          <button id="assignSend" class="btn">Categorize & Assign</button>
           <button id="assignClear" class="btn secondary">Clear</button>
+          <div id="assignLoader" style="display:none"><span class="spinner"></span></div>
         </div>
 
-        <div id="assignOutput" class="output" style="display:none"></div>
+        <div id="assignOutput" class="output" style="display:none;margin-top:12px"></div>
       </div>
 
-      <!-- JSON MODIFIER -->
-      <div id="panel-json" class="panel" style="display:none">
-        <div class="tool-header"><h2 class="tool-title">JSON Modifier</h2></div>
+      <!-- JSON Modifier -->
+      <div id="panel-json" class="card panel" style="display:none;margin-top:14px">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <h2 style="margin:0">JSON Modifier</h2>
+          <div class="muted">Edit top-level keys using AI</div>
+        </div>
 
-        <label class="smallblock">Paste JSON here</label>
-        <textarea id="jsonRaw" class="code-input" placeholder='e.g., {"key":"value"}'></textarea>
-        <div class="controls">
-          <button id="jsonParse" class="btn">Parse</button>
+        <div style="margin-top:12px">
+          <div class="label">Paste JSON here</div>
+          <textarea id="jsonRaw" placeholder='e.g. {"key":"value"}'></textarea>
+        </div>
+
+        <div style="margin-top:8px">
+          <div class="label">Edit instructions for the model</div>
+          <input id="jsonInstr" type="text" placeholder="E.g., change discount to 0.2, update name to 'Pro'"/>
+        </div>
+
+        <div class="top-actions">
+          <button id="jsonSend" class="btn">Edit JSON with AI</button>
           <button id="jsonClear" class="btn secondary">Clear</button>
+          <div id="jsonLoader" style="display:none"><span class="spinner"></span></div>
         </div>
 
-        <div id="jsonEditor" style="margin-top:12px;display:none">
-          <div id="jsonFields"></div>
-          <div class="controls spaced">
-            <button id="jsonApply" class="btn">Apply Edits</button>
-            <button id="jsonCopy" class="btn secondary">Copy JSON</button>
-            <button id="jsonDownload" class="btn secondary">Download</button>
-          </div>
-        </div>
-
-        <div id="jsonOutput" class="output" style="display:none"></div>
+        <div id="jsonOutput" class="output" style="display:none;margin-top:12px"></div>
       </div>
 
-      <!-- HISTORY -->
-      <div id="panel-history" class="panel" style="display:none">
-        <div class="tool-header flex-between">
-          <h2 class="tool-title">Generation History</h2>
-          <div class="muted">Stored in browser</div>
+      <!-- History -->
+      <div id="panel-history" class="card panel" style="display:none;margin-top:14px">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <h2 style="margin:0">History</h2>
+          <div class="muted">Saved locally</div>
         </div>
-        <div id="historyList"></div>
-        <div class="controls spaced">
-          <button id="historyExport" class="btn secondary">Export</button>
-          <button id="historyClear" class="btn secondary">Clear</button>
-        </div>
+        <div id="historyList" style="margin-top:12px"></div>
       </div>
 
-      <footer style="margin-top:18px" class="muted">Tip: app stores history in your browser only. Use Export to save.</footer>
+      <footer>Note: API key is used directly from your browser. For production, proxy the requests server-side to keep your key secret.</footer>
     </main>
   </div>
 
 <script>
-/* ----------------- Utilities ----------------- */
+/* ----------------------------- CONFIG ----------------------------- */
+/* Gemini model and endpoint */
+const GEMINI_MODEL = "gemini-2.5-flash-preview-09-2025";
+const GEMINI_ENDPOINT = (apiKey) => `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${encodeURIComponent(apiKey)}`;
 
-function $(sel){return document.querySelector(sel)}
-function $all(sel){return Array.from(document.querySelectorAll(sel))}
+/* ----------------------------- HELPERS ----------------------------- */
+function $(sel){ return document.querySelector(sel) }
+function $all(sel){ return Array.from(document.querySelectorAll(sel)) }
 
-function nowDate() {
+function nowShort(){
   const d = new Date();
-  const mm = String(d.getMonth()+1).padStart(2,'0');
-  const dd = String(d.getDate()).padStart(2,'0');
-  const yy = String(d.getFullYear()).slice(-2);
-  return mm + '/' + dd + '/' + yy;
-}
-
-/* Safe copy with fallback */
-async function safeCopy(text) {
-  if (!text) return false;
-  try {
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-      await navigator.clipboard.writeText(text);
-      return true;
-    }
-  } catch(e){ /* fall through */ }
-  try {
-    const ta = document.createElement('textarea');
-    ta.value = text;
-    ta.setAttribute('readonly','');
-    ta.style.position='absolute';
-    ta.style.left='-9999px';
-    document.body.appendChild(ta);
-    ta.select();
-    document.execCommand('copy');
-    document.body.removeChild(ta);
-    return true;
-  } catch(e) {
-    alert('Copying is blocked here — use Download button.');
-    return false;
-  }
+  return d.toLocaleString();
 }
 
 /* localStorage history helpers */
-function loadHistory() {
-  try { return JSON.parse(localStorage.getItem('99gpt_history')||'[]') } catch(e){ return [] }
-}
-function saveHistory(arr) {
-  try { localStorage.setItem('99gpt_history', JSON.stringify(arr)) } catch(e){}
-}
-function pushHistory(tool,input,output) {
+function loadHistory(){ try { return JSON.parse(localStorage.getItem("99gpt_history")||"[]") } catch(e) { return [] } }
+function saveHistory(arr){ try { localStorage.setItem("99gpt_history", JSON.stringify(arr)) } catch(e){} }
+function addHistory(tool, input, output){
   const h = loadHistory();
-  h.push({tool,input: input.slice(0,1000), output, timestamp: Date.now()});
+  h.push({ tool, input: input.slice(0,1000), output, timestamp: Date.now() });
   saveHistory(h);
-  renderLastSaved();
+  renderHistoryPreview();
 }
 
-/* sanitize allowing <b> only */
-function sanitizeAllowBold(s) {
-  if (!s) return '';
-  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
-          .replace(/&lt;b&gt;/g,'<b>').replace(/&lt;\/b&gt;/g,'</b>').replace(/\n/g,'\n');
+/* UI helpers */
+function setLoading(id, on){
+  const el = $(id);
+  if(!el) return;
+  el.style.display = on ? "inline-block" : "none";
+}
+function showOutput(elSelector, html){
+  const el = $(elSelector);
+  if(!el) return;
+  el.innerHTML = html;
+  el.style.display = "block";
+}
+function hideOutput(elSelector){
+  const el = $(elSelector); if(!el) return; el.style.display = "none";
+}
+function showError(elSelector, text){
+  showOutput(elSelector, `<div class="error">${escapeHtml(text)}</div>`);
+}
+function escapeHtml(s){ return (s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;") }
+
+/* safe copy (clipboard) */
+async function safeCopy(text){
+  if(!text) return false;
+  try{
+    if(navigator.clipboard && navigator.clipboard.writeText) { await navigator.clipboard.writeText(text); return true; }
+  }catch(e){}
+  try{
+    const ta = document.createElement("textarea");
+    ta.value = text; ta.setAttribute("readonly",""); ta.style.position="absolute"; ta.style.left="-9999px";
+    document.body.appendChild(ta); ta.select(); document.execCommand("copy"); document.body.removeChild(ta); return true;
+  }catch(e){}
+  alert("Copy blocked — use Download.");
+  return false;
 }
 
-/* ----------------- Tabs ----------------- */
-$all('#tabs button').forEach(btn=>{
-  btn.addEventListener('click',()=>{
-    $all('#tabs button').forEach(b=>b.classList.remove('active'));
-    btn.classList.add('active');
+/* render history preview */
+function renderHistoryPreview(){
+  const preview = $("#historyPreview");
+  if(!preview) return;
+  const list = loadHistory().slice().reverse().slice(0,6);
+  preview.innerHTML = list.length ? list.map(item => `<div style="padding:8px;border-radius:8px;border:1px solid var(--border);background:#fff"><div style="font-weight:700">${escapeHtml(item.tool)}</div><div style="font-size:12px;color:${'#6b7280'}">${new Date(item.timestamp).toLocaleString()}</div></div>`).join("") : '<div class="muted">No recent items</div>';
+  // also update last saved in sidebar if exists
+  try { const h = loadHistory(); $("#lastSaved") && ($("#lastSaved").textContent = h.length ? new Date(h[h.length-1].timestamp).toLocaleString() : "—"); } catch(e){}
+}
+function renderHistoryList(){
+  const container = $("#historyList");
+  const items = loadHistory().slice().reverse();
+  if(!container) return;
+  if(!items.length){ container.innerHTML = '<div class="muted">No history yet.</div>'; return; }
+  container.innerHTML = items.map(it => `<div class="history-item"><div style="display:flex;justify-content:space-between"><strong>${escapeHtml(it.tool)}</strong><span class="muted">${new Date(it.timestamp).toLocaleString()}</span></div><pre style="white-space:pre-wrap;margin-top:8px;background:#fff;padding:8px;border-radius:6px;border:1px solid var(--border)">${escapeHtml(it.output)}</pre></div>`).join("");
+}
+
+/* ----------------------------- TABS ----------------------------- */
+$all("#tabs button").forEach(btn=>{
+  btn.addEventListener("click", ()=> {
+    $all("#tabs button").forEach(b=>b.classList.remove("active"));
+    btn.classList.add("active");
     const t = btn.dataset.tab;
-    $all('.panel').forEach(p=>p.style.display='none');
-    $(`#panel-${t}`).style.display='block';
-    window.scrollTo({top:0,behavior:'smooth'});
+    $all(".panel").forEach(p=>p.style.display="none");
+    const panel = document.getElementById("panel-"+t);
+    if(panel) panel.style.display = "block";
+    if(t==="history"){ renderHistoryList(); }
   });
 });
 
-/* ----------------- Daily Update ----------------- */
-const dailyDate = $('#dailyDate'), dailyBuild = $('#dailyBuild'), dailyNotes = $('#dailyNotes'), dailyOutput = $('#dailyOutput');
-dailyDate.value = nowDate();
-
-$('#dailyGen').addEventListener('click', ()=>{
-  const notes = dailyNotes.value.trim();
-  const build = dailyBuild.value.trim();
-  const date = dailyDate.value.trim() || nowDate();
-  if (!notes || !build) { dailyOutput.style.display='block'; dailyOutput.textContent='Error: Please enter a Build Number and your Test Notes.'; return; }
-  const bullets = notes.split(/\n+/).map(s=>s.trim()).filter(Boolean);
-  const numbered = bullets.map((b,i)=>`${i+1}. ${b}`).join('\n');
-  const res = `Test covered (${date})\n<b>Mojo Build ${build}</b>\nTested\n${numbered}`;
-  dailyOutput.style.display='block';
-  dailyOutput.innerHTML = sanitizeAllowBold(res);
-  pushHistory('Daily Update', notes, res);
-});
-
-$('#dailyReset').addEventListener('click', ()=>{ dailyNotes.value=''; dailyBuild.value=''; dailyOutput.style.display='none' })
-
-/* ----------------- Planner ----------------- */
-$('#plannerGen').addEventListener('click', ()=>{
-  const topic = $('#plannerTopic').value.trim();
-  if (!topic) { $('#plannerOutput').style.display='block'; $('#plannerOutput').textContent='Error: Please enter a feature topic or description.'; return; }
-  const res = `Test cases for: ${topic}\n1. ...`;
-  $('#plannerOutput').style.display='block'; $('#plannerOutput').textContent = res;
-  pushHistory('Test Planner', topic, res);
-});
-$('#plannerClear').addEventListener('click', ()=>{ $('#plannerTopic').value=''; $('#plannerOutput').style.display='none' })
-
-/* ----------------- Reporting ----------------- */
-$('#reportGen').addEventListener('click', ()=>{
-  const raw = $('#reportRaw').value.trim();
-  if (!raw) { $('#reportOutput').style.display='block'; $('#reportOutput').textContent='Error: Please enter the raw text of your bug report.'; return; }
-  const res = `<b>IAP Related issues</b>\n1. ${raw}`;
-  $('#reportOutput').style.display='block'; $('#reportOutput').innerHTML = sanitizeAllowBold(res);
-  pushHistory('Reporting Helper', raw, res);
-});
-$('#reportClear').addEventListener('click', ()=>{ $('#reportRaw').value=''; $('#reportOutput').style.display='none' })
-
-/* ----------------- Smart Assign (parser) ----------------- */
-
-/* parseAssigneesInput same behavior as earlier */
-function parseAssigneesInput(raw) {
-  const tokens = raw.split(/\n|;/).map(t=>t.trim()).filter(Boolean).flatMap(t=>t.split(',').map(s=>s.trim()).filter(Boolean));
-  const out = [];
-  for (const tok of tokens) {
-    const idx = tok.indexOf(':');
-    if (idx === -1) continue;
-    const name = tok.slice(0,idx).trim();
-    let keywords = tok.slice(idx+1).trim();
-    if (!name) continue;
-    let kws = keywords.split(',').map(k=>k.trim()).filter(Boolean);
-    if (kws.length===1 && kws[0].includes(' ')) {
-      kws = kws[0].split(/\s+/).map(k=>k.trim()).filter(Boolean);
-    }
-    out.push({name, keywords: kws.map(k=>k.toLowerCase())});
-  }
-  return out;
-}
-
-function processSmartAssign(assigneesInput, releaseNotes) {
-  const assignees = parseAssigneesInput(assigneesInput);
-  const lines = releaseNotes.split(/\r?\n/);
-  const findAssigneeForLine = (line) => {
-    const l = line.toLowerCase();
-    for (const a of assignees) {
-      for (const kw of a.keywords) {
-        if (!kw) continue;
-        if (l.includes(kw)) return a.name;
-      }
-    }
-    return null;
+/* ----------------------------- Gemini API Call ----------------------------- */
+/* Simple callGemini with timeout and basic retry. WARNING: sending key from client is insecure. */
+async function callGemini(apiKey, userQuery, systemPrompt, generationConfig = {}, timeoutMs = 20000, maxAttempts = 3) {
+  if(!apiKey) throw new Error("Missing API key");
+  const url = GEMINI_ENDPOINT(apiKey);
+  const payload = {
+    contents: [{ parts: [{ text: userQuery }] }],
+    systemInstruction: { parts: [{ text: systemPrompt }] },
+    ...(Object.keys(generationConfig).length ? { generationConfig } : {})
   };
-  const outLines = [];
-  for (let rawLine of lines) {
-    const line = rawLine.trim();
-    if (!line) { outLines.push(''); continue; }
-    if (/^POC\b/i.test(line) || /^POC\s*:/i.test(line)) { outLines.push(rawLine); continue; }
-    if (/^Feature\b/i.test(line) || /^Feature\s*:/i.test(line)) { outLines.push(rawLine); continue; }
-    const assignee = findAssigneeForLine(line);
-    if (assignee) outLines.push(`${rawLine} : ${assignee}`); else outLines.push(rawLine);
+
+  let attempt = 0;
+  while(attempt < maxAttempts){
+    attempt++;
+    const controller = new AbortController();
+    const timer = setTimeout(()=>controller.abort(), timeoutMs);
+    try{
+      const res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+        signal: controller.signal
+      });
+      clearTimeout(timer);
+      if(!res.ok){
+        const txt = await res.text().catch(()=>"");
+        throw new Error(`API Error ${res.status}: ${txt}`);
+      }
+      const data = await res.json();
+      const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || (data?.candidates?.[0]?.content?.[0]?.text) || "";
+      return text;
+    }catch(err){
+      clearTimeout(timer);
+      if(attempt >= maxAttempts) throw err;
+      // small backoff
+      await new Promise(r => setTimeout(r, 500 * Math.pow(2, attempt)));
+    }
   }
-  return outLines.join('\n');
 }
 
-$('#assignGen').addEventListener('click', ()=>{
-  const list = $('#assignList').value.trim();
-  const notes = $('#assignNotes').value.trim();
-  if (!list || !notes) { $('#assignOutput').style.display='block'; $('#assignOutput').textContent='Error: Please enter Release Notes and the list of Assignees.'; return; }
-  const res = processSmartAssign(list, notes);
-  $('#assignOutput').style.display='block'; $('#assignOutput').textContent = res;
-  pushHistory('Smart Assign', `${list}\n---\n${notes}`, res);
-});
-$('#assignClear').addEventListener('click', ()=>{ $('#assignList').value=''; $('#assignNotes').value=''; $('#assignOutput').style.display='none' })
+/* ----------------------------- TOOL: Daily Update ----------------------------- */
 
-/* ----------------- JSON Modifier ----------------- */
+$("#dailyDate").value = (new Date()).toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: '2-digit' });
 
-let currentObj = null;
-$('#jsonParse').addEventListener('click', ()=>{
-  const raw = $('#jsonRaw').value.trim();
-  try {
-    currentObj = JSON.parse(raw);
-    renderJsonEditor();
-    $('#jsonOutput').style.display='none';
-    $('#jsonEditor').style.display='block';
-  } catch(e) {
-    $('#jsonOutput').style.display='block';
-    $('#jsonOutput').textContent = 'Invalid JSON';
-  }
-});
+$("#dailySend").addEventListener("click", async ()=>{
+  const apiKey = $("#apiKey").value.trim();
+  const notes = $("#dailyNotes").value.trim();
+  const build = $("#dailyBuild").value.trim();
+  const date = $("#dailyDate").value.trim() || (new Date()).toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: '2-digit' });
 
-$('#jsonClear').addEventListener('click', ()=>{ $('#jsonRaw').value=''; currentObj = null; $('#jsonEditor').style.display='none'; $('#jsonOutput').style.display='none' })
+  if(!apiKey){ alert("Paste your Gemini API key in the sidebar first."); return; }
+  if(!notes || !build){ showError("#dailyOutput","Please enter Build Number and Test Notes."); return; }
 
-function renderJsonEditor() {
-  const container = $('#jsonFields'); container.innerHTML = '';
-  if (!currentObj || typeof currentObj !== 'object') return;
-  Object.keys(currentObj).forEach(k=>{
-    const row = document.createElement('div'); row.style.display='flex'; row.style.gap='8px'; row.style.marginBottom='8px';
-    const keyDiv = document.createElement('div'); keyDiv.style.width='160px'; keyDiv.textContent=k; keyDiv.style.color='#374151';
-    const input = document.createElement('input'); input.className='input'; input.value = String(currentObj[k]); input.style.flex='1';
-    input.addEventListener('input', ()=>{ currentObj[k] = tryParseValue(input.value) });
-    row.appendChild(keyDiv); row.appendChild(input); container.appendChild(row);
-  });
-}
+  const systemPrompt = `You are a professional QA Reporting Assistant. Take raw testing notes and format them into a clean daily update.
+Strictly follow this output format:
+1. Line 1: 'Test covered (${date})'
+2. Line 2: '<b>Mojo Build ${build}</b>'
+3. Line 3: 'Tested'
+4. Lines 4+: A clean, numbered list of the notes.
+- Fix only grammar and spelling.
+- Use simple, easy-to-understand words.
+- Do not add any introductory or concluding sentences.`;
 
-function tryParseValue(v) {
-  if (v === 'null') return null;
-  if (v === 'true') return true;
-  if (v === 'false') return false;
-  const n = Number(v);
-  if (!Number.isNaN(n) && String(n) === v) return n;
-  return v;
-}
+  const userQuery = `Raw Notes to process:\n${notes}`;
 
-$('#jsonApply').addEventListener('click', ()=>{
-  try {
-    const out = JSON.stringify(currentObj, null, 2);
-    $('#jsonOutput').style.display='block';
-    $('#jsonOutput').textContent = out;
-    pushHistory('JSON Modifier', $('#jsonRaw').value, out);
-    $('#jsonRaw').value = out;
-  } catch(e) {
-    $('#jsonOutput').style.display='block';
-    $('#jsonOutput').textContent = 'Could not stringify object';
-  }
+  try{
+    setLoading("#dailyLoader", true);
+    hideOutput("#dailyOutput");
+    const text = await callGemini(apiKey, userQuery, systemPrompt, {});
+    showOutput("#dailyOutput", text);
+    addHistory("Daily Update", notes, text);
+  }catch(err){
+    showError("#dailyOutput", err.message || String(err));
+  }finally{ setLoading("#dailyLoader", false); }
 });
 
-$('#jsonCopy').addEventListener('click', ()=>{ if (currentObj) safeCopy(JSON.stringify(currentObj, null, 2)) })
-$('#jsonDownload').addEventListener('click', ()=>{
-  if (!currentObj) return;
-  const blob = new Blob([JSON.stringify(currentObj, null, 2)], {type:'application/json'});
-  const url = URL.createObjectURL(blob); const a = document.createElement('a');
-  a.href = url; a.download = `config_${Date.now()}.json`; a.click(); URL.revokeObjectURL(url);
+/* ----------------------------- TOOL: Planner ----------------------------- */
+$("#plannerSend").addEventListener("click", async ()=>{
+  const apiKey = $("#apiKey").value.trim();
+  const topic = $("#plannerTopic").value.trim();
+  if(!apiKey){ alert("Paste your Gemini API key in the sidebar first."); return; }
+  if(!topic){ showError("#plannerOutput","Please enter a feature topic or description."); return; }
+
+  const systemPrompt = `You are a creative QA Test Designer. Analyze a feature and suggest Test Cases and critical Edge Cases/Risk Areas.
+Format your response clearly using simple headings and numbered lists. Do not use Markdown.
+- Focus on platform issues, concurrent actions, network failures, and boundary conditions.
+- Do NOT add any extra introductory text. Just provide the lists.`;
+  const userQuery = `Feature Topic/Description: ${topic}`;
+
+  try{
+    setLoading("#plannerLoader", true);
+    hideOutput("#plannerOutput");
+    const text = await callGemini(apiKey, userQuery, systemPrompt, {});
+    showOutput("#plannerOutput", text);
+    addHistory("Test Planner", topic, text);
+  }catch(err){
+    showError("#plannerOutput", err.message || String(err));
+  }finally{ setLoading("#plannerLoader", false); }
 });
 
-/* ----------------- History ----------------- */
+/* ----------------------------- TOOL: Reporting ----------------------------- */
+$("#reportSend").addEventListener("click", async ()=>{
+  const apiKey = $("#apiKey").value.trim();
+  const raw = $("#reportRaw").value.trim();
+  if(!apiKey){ alert("Paste your Gemini API key in the sidebar first."); return; }
+  if(!raw){ showError("#reportOutput","Please enter the raw text of your bug report."); return; }
 
-function renderHistoryList() {
-  const list = loadHistory();
-  const container = $('#historyList'); container.innerHTML = '';
-  if (!list.length) {
-    container.innerHTML = '<div class="muted">No history yet.</div>';
+  const systemPrompt = `You are a QA Report Refiner. Take raw bug report text and transform it into a clear, professional report for a developer.
+Strictly follow this formatting:
+1. Identify the main issue area and make it bold.
+2. Clean up grammar and spelling.
+3. Ensure all issues are in a clean, numbered list (1., 2., 3., etc.).
+4. Do NOT add any extra introductory text or jargon. Just provide the list.`;
+
+  const userQuery = `Raw Bug Report Text:\n${raw}`;
+
+  try{
+    setLoading("#reportLoader", true);
+    hideOutput("#reportOutput");
+    const text = await callGemini(apiKey, userQuery, systemPrompt, {});
+    showOutput("#reportOutput", text);
+    addHistory("Reporting Helper", raw, text);
+  }catch(err){
+    showError("#reportOutput", err.message || String(err));
+  }finally{ setLoading("#reportLoader", false); }
+});
+
+/* ----------------------------- TOOL: Smart Assign ----------------------------- */
+$("#assignSend").addEventListener("click", async ()=>{
+  const apiKey = $("#apiKey").value.trim();
+  const list = $("#assignList").value.trim();
+  const notes = $("#assignNotes").value.trim();
+  if(!apiKey){ alert("Paste your Gemini API key in the sidebar first."); return; }
+  if(!list || !notes){ showError("#assignOutput","Please enter Release Notes and the list of Assignees."); return; }
+
+  // Ask model to process same logic as our parser but via AI (explicit instructions)
+  const systemPrompt = `You are a simple delegation tool. Analyze release notes, categorize tasks, and assign them based on the assignees mapping provided.
+Assignees list format: "Name: keyword1, keyword2".
+Rules:
+- Preserve any lines starting with "POC" or "Feature" as-is.
+- For task lines (other lines), match keywords case-insensitively as substrings.
+- When a task matches a keyword, append " : [Assignee]" to the line.
+- If a task matches multiple assignees, prefer the first matching assignee in the provided assignee list.
+- Do NOT invent POCs or assignees.
+Format the final output as the original notes with assignments appended where applicable.`;
+
+  const userQuery = `Assignees:\n${list}\n\nRelease Notes:\n${notes}`;
+
+  try{
+    setLoading("#assignLoader", true);
+    hideOutput("#assignOutput");
+    const text = await callGemini(apiKey, userQuery, systemPrompt, {});
+    showOutput("#assignOutput", text);
+    addHistory("Smart Assign", `${list}\n---\n${notes}`, text);
+  }catch(err){
+    showError("#assignOutput", err.message || String(err));
+  }finally{ setLoading("#assignLoader", false); }
+});
+
+/* ----------------------------- TOOL: JSON Modifier (AI) ----------------------------- */
+$("#jsonSend").addEventListener("click", async ()=>{
+  const apiKey = $("#apiKey").value.trim();
+  const raw = $("#jsonRaw").value.trim();
+  const instr = $("#jsonInstr").value.trim();
+  if(!apiKey){ alert("Paste your Gemini API key in the sidebar first."); return; }
+  if(!raw){ showError("#jsonOutput","Please paste some JSON first."); return; }
+  try{
+    // Validate JSON first
+    JSON.parse(raw);
+  }catch(e){
+    showError("#jsonOutput","Invalid JSON — please correct before sending to AI.");
     return;
   }
-  list.slice().reverse().forEach(item=>{
-    const div = document.createElement('div'); div.className='history-card';
-    div.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-      <div style="font-weight:700;color:${getComputedStyle(document.documentElement).getPropertyValue('--accent')||'#ef4444'}">${item.tool}</div>
-      <div style="font-size:12px;color:#6b7280">${new Date(item.timestamp).toLocaleString()}</div>
-    </div>
-    <div style="font-size:13px;margin-bottom:6px"><strong>Input:</strong> <span style="font-style:italic">${escapeHtml(item.input).slice(0,300)}${item.input.length>300?'...':''}</span></div>
-    <div style="background:#fff;padding:8px;border-radius:6px;border:1px solid #eee;white-space:pre-wrap">${sanitizeAllowBold(item.output)}</div>
-    `;
-    container.appendChild(div);
-  });
-}
 
-function escapeHtml(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  const systemPrompt = `You are a JSON editor assistant. Given a JSON object and an instruction, produce the edited JSON object only (no explanation). Preserve top-level keys unless instruction says to add/remove keys. Keep values typed (true/false/null/numbers/strings) where appropriate.`;
+  const userQuery = `JSON:\n${raw}\n\nEdit instructions:\n${instr}\n\nReturn only the updated JSON.`;
 
-$('#historyExport').addEventListener('click', ()=>{
-  const data = JSON.stringify(loadHistory(), null, 2);
-  const blob = new Blob([data], {type:'application/json'});
-  const url = URL.createObjectURL(blob); const a = document.createElement('a');
-  a.href = url; a.download = `99GPT_history_${Date.now()}.json`; a.click(); URL.revokeObjectURL(url);
+  try{
+    setLoading("#jsonLoader", true);
+    hideOutput("#jsonOutput");
+    const text = await callGemini(apiKey, userQuery, systemPrompt, {});
+    // Try to parse returned text — sometimes model wraps in code fences, remove backticks
+    const cleaned = text.replace(/^\s*```(?:json)?\s*/,'').replace(/\s*```\s*$/,'').trim();
+    // Validate JSON
+    const parsed = JSON.parse(cleaned);
+    const out = JSON.stringify(parsed, null, 2);
+    showOutput("#jsonOutput", out);
+    addHistory("JSON Modifier", raw, out);
+  }catch(err){
+    showError("#jsonOutput", err.message || String(err));
+  }finally{ setLoading("#jsonLoader", false); }
 });
-$('#historyClear').addEventListener('click', ()=>{ localStorage.removeItem('99gpt_history'); renderHistoryList(); renderLastSaved(); });
 
-$('#exportHistoryBtn').addEventListener('click', ()=>$('#historyExport').click());
-$('#clearHistoryBtn').addEventListener('click', ()=>{ localStorage.removeItem('99gpt_history'); renderHistoryList(); renderLastSaved(); });
+/* ----------------------------- SAVE/CLEAR KEY & HISTORY ----------------------------- */
+$("#saveKey").addEventListener("click", ()=>{ localStorage.setItem("99gpt_apikey", $("#apiKey").value.trim()); alert("Saved (still client-side)"); });
+$("#clearKey").addEventListener("click", ()=>{ localStorage.removeItem("99gpt_apikey"); $("#apiKey").value=''; alert("Cleared"); });
 
-function renderLastSaved(){
-  const h = loadHistory();
-  $('#lastSaved').textContent = h.length ? new Date(h[h.length-1].timestamp).toLocaleString() : '—';
-}
+$("#exportHistory").addEventListener("click", ()=>{
+  const data = JSON.stringify(loadHistory(), null, 2);
+  const blob = new Blob([data], {type:'application/json'}); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `99gpt_history_${Date.now()}.json`; a.click();
+});
+$("#clearHistory").addEventListener("click", ()=>{ localStorage.removeItem("99gpt_history"); renderHistoryPreview(); renderHistoryList(); });
 
-/* ----------------- small helpers ----------------- */
+/* ----------------------------- Init ----------------------------- */
+(function init(){
+  // restore API key if saved
+  const savedKey = localStorage.getItem("99gpt_apikey");
+  if(savedKey) $("#apiKey").value = savedKey;
 
-function init() {
-  // Set panels visibility initially
-  $all('.panel').forEach(p=>p.style.display='none');
-  $('#panel-daily').style.display='block';
-  renderHistoryList();
-  renderLastSaved();
-}
-init();
-
-/* ----------------- misc ----------------- */
-// hook save when panels generate if needed (pushHistory called)
+  // set default date
+  $("#dailyDate").value = (new Date()).toLocaleDateString('en-US',{month:'2-digit',day:'2-digit',year:'2-digit'});
+  renderHistoryPreview();
+  // panels already set by html default (daily shown), hide others
+  $all(".panel").forEach(p => { if(p.id !== "panel-daily") p.style.display = "none"; });
+  // attach history list update when switching to history tab is handled by tab click
+})();
 </script>
 </body>
 </html>
